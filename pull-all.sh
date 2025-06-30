@@ -11,15 +11,17 @@ show_help() {
 pull-all 🌀
 
 Usage:
-  pull-all [directory]           Pull all Git repos in given directory or default
-  pull-all run [directory]       (Same as above)
-  pull-all set-default <dir>     Set default directory persistently
-  pull-all get-default           Show current default directory
-  pull-all help                  Show this help message
+  pull-all [directory]                     Pull all Git repos in given directory or default
+  pull-all run [directory]                 (Same as above)
+  pull-all --exclude dir1,dir2 [directory] Pull all Git repos except specified directories
+  pull-all set-default <dir>              Set default directory persistently
+  pull-all get-default                    Show current default directory
+  pull-all help                           Show this help message
 
 Examples:
   pull-all
   pull-all ~/projects
+  pull-all --exclude node_modules,vendor ~/code
   pull-all set-default ~/code
   pull-all get-default
 EOF
@@ -46,14 +48,40 @@ get_default() {
 
 run_pull() {
     local base_dir="$1"
+    local excluded_dirs="$2"
     if [[ -z "$base_dir" ]]; then
         base_dir="$DEFAULT_DIR"
     fi
 
-    echo "🔍 Scanning for Git repos in: $base_dir"
+    local exclude_args=""
+    if [[ ! -z "$excluded_dirs" ]]; then
+        IFS=',' read -ra ADDR <<< "$excluded_dirs"
+        for dir in "${ADDR[@]}"; do
+            # Trim whitespace
+            dir=$(echo "$dir" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            exclude_args="$exclude_args -not -path '*/$dir/*'"
+        done
+    fi
 
-    find "$base_dir" -type d -name ".git" | while read -r gitdir; do
-        repo_dir="$(dirname "$gitdir")"
+    echo "🔍 Scanning for Git repos in: $base_dir"
+    if [[ ! -z "$excluded_dirs" ]]; then
+        echo "🚫 Excluding directories: $excluded_dirs"
+    fi
+
+    if [[ -z "$exclude_args" ]]; then
+        find "$base_dir" -type d -name ".git" | while read -r gitdir; do
+            process_repo "$gitdir"
+        done
+    else
+        eval "find \"$base_dir\" -type d -name \".git\" $exclude_args" | while read -r gitdir; do
+            process_repo "$gitdir"
+        done
+    fi
+}
+
+process_repo() {
+    local gitdir="$1"
+    local repo_dir="$(dirname "$gitdir")"
         echo -e "\n👉 Pulling in: $repo_dir"
 
         (
@@ -70,15 +98,21 @@ run_pull() {
             echo "⬇️ Pulling latest changes from origin/$default_branch"
             git pull
         )
-    done
+        echo "✅ Pulled latest changes from origin/$default_branch"
 }
 
+EXCLUDED_DIRS=""
 COMMAND="$1"
 shift || true
 
+if [[ "$1" == "--exclude" ]]; then
+    EXCLUDED_DIRS="$2"
+    shift 2
+fi
+
 if [[ "$COMMAND" != "run" && "$COMMAND" != "set-default" && "$COMMAND" != "get-default" && "$COMMAND" != "help" && "$COMMAND" != "-h" && "$COMMAND" != "--help" ]]; then
     if [[ -d "$COMMAND" || "$COMMAND" =~ ^[.~\/] ]]; then
-        run_pull "$COMMAND"
+        run_pull "$COMMAND" "$EXCLUDED_DIRS"
         exit 0
     fi
 fi
@@ -94,7 +128,7 @@ case "$COMMAND" in
         get_default
         ;;
     run|"")
-        run_pull "$1"
+        run_pull "$1" "$EXCLUDED_DIRS"
         ;;
     *)
         echo "❌ Unknown command or invalid directory: $COMMAND"
