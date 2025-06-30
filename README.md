@@ -19,7 +19,7 @@
 ### Option 1: Using Homebrew (Recommended)
 
 ```bash
-brew tap evrentan/pullall-tap
+brew tap evrentan/pull-all-brew
 brew install pull-all
 ```
 
