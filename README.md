@@ -9,6 +9,7 @@
 - 🔍 Recursively scans for Git repositories
 - 🔁 Auto-switches to the default branch (e.g. `main`, `master`)
 - 💾 Configurable default directory using `~/.pullallrc`
+- 🚫 Exclude specific directories from scanning
 - ✅ Works with macOS/Linux (and supports Homebrew install)
 - 📦 Simple to install and run from anywhere
 
@@ -50,9 +51,11 @@ pull-all [command or directory]
 pull-all                            # Uses default directory
 pull-all ~/Projects                 # Pulls all repos in ~/Projects
 pull-all run .                      # Pulls all repos in current directory
+pull-all --exclude node_modules     # Pulls all repos except those in node_modules
+pull-all --exclude vendor,dist ~/code # Pulls all repos except those in vendor or dist
 pull-all set-default ~/Work/Repos   # Sets ~/Work/Repos as default
-pull-all get-default                # Displays the current default
-pull-all help                       # Shows help message
+pull-all get-default               # Displays the current default
+pull-all help                      # Shows help message
 ```
 
 ---
@@ -91,15 +94,17 @@ Output:
 pull-all 🌀
 
 Usage:
-  pull-all [directory]           Pull all Git repos in given directory or default
-  pull-all run [directory]       (Same as above)
-  pull-all set-default <dir>     Set default directory persistently
-  pull-all get-default           Show current default directory
-  pull-all help                  Show this help message
+  pull-all [directory]                     Pull all Git repos in given directory or default
+  pull-all run [directory]                 (Same as above)
+  pull-all --exclude dir1,dir2 [directory] Pull all Git repos except specified directories
+  pull-all set-default <dir>              Set default directory persistently
+  pull-all get-default                    Show current default directory
+  pull-all help                           Show this help message
 
 Examples:
   pull-all
   pull-all ~/projects
+  pull-all --exclude node_modules,vendor ~/code
   pull-all set-default ~/code
   pull-all get-default
 ```
