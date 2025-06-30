@@ -31,7 +31,9 @@ Clone the repo and move the script into your PATH:
 git clone https://github.com/evrentan/pull-all.git
 cd pull-all
 chmod +x pull-all.sh
-mv pull-all.sh /usr/local/bin/pull-all  # or any other directory in your $PATH
+mv pull-all.sh /usr/local/bin/pull-all  # move script to a folder in your PATH (choose this or the next one)
+ln -s pull-all.sh /usr/local/bin/pull-all # instead of moving, create a symlink (choose this or the previous one)
+pull-all help
 ```
 
 ---

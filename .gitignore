@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+
+# Shell history
+.history
+
+# Config files
+.pullallrc
+
+# Homebrew build artifacts
+*.bottle*
