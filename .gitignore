@@ -16,3 +16,11 @@
 
 # Homebrew build artifacts
 *.bottle*
+*.tar.gz
+
+# System files
+Thumbs.db
+ehthumbs.db
+
+# VSCode
+.vscode/
