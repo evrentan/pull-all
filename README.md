@@ -12,6 +12,7 @@
 - 🚫 Exclude specific directories from scanning
 - ✅ Works with macOS/Linux (and supports Homebrew install)
 - 📦 Simple to install and run from anywhere
+- 🧵 Supports parallel execution for faster updates
 
 ---
 
@@ -54,8 +55,9 @@ pull-all run .                      # Pulls all repos in current directory
 pull-all --exclude node_modules     # Pulls all repos except those in node_modules
 pull-all --exclude vendor,dist ~/code # Pulls all repos except those in vendor or dist
 pull-all set-default ~/Work/Repos   # Sets ~/Work/Repos as default
-pull-all get-default               # Displays the current default
-pull-all help                      # Shows help message
+pull-all get-default                # Displays the current default
+pull-all help                       # Shows help message
+pull-all -p                         # Pulls all repos in parallel
 ```
 
 ---
@@ -97,14 +99,23 @@ Usage:
   pull-all [directory]                     Pull all Git repos in given directory or default
   pull-all run [directory]                 (Same as above)
   pull-all --exclude dir1,dir2 [directory] Pull all Git repos except specified directories
+  pull-all -p|--parallel [dir]            Pull all repos in parallel
   pull-all set-default <dir>              Set default directory persistently
   pull-all get-default                    Show current default directory
   pull-all help                           Show this help message
+
+
+Note: The -p or --parallel flag can be placed anywhere in the command
 
 Examples:
   pull-all
   pull-all ~/projects
   pull-all --exclude node_modules,vendor ~/code
+  pull-all -p ~/projects
+  pull-all ~/projects -p
+  pull-all --parallel
+  pull-all run -p ~/projects
+  pull-all run ~/projects --parallel
   pull-all set-default ~/code
   pull-all get-default
 ```
