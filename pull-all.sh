@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 CONFIG_FILE="$HOME/.pullallrc"
-HARDCODED_DEFAULT_DIR="/Users/$USER/repo"
+HARDCODED_DEFAULT_DIR="$HOME/repo"
 
 DEFAULT_DIR="$HARDCODED_DEFAULT_DIR"
 [[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
@@ -54,18 +54,22 @@ pull_single_repo() {
     local output=""
     output+="\n👉 Pulling in: $repo_dir"
 
-    cd "$repo_dir" || exit
+    if ! git -C "$repo_dir" rev-parse --is-inside-work-tree &>/dev/null; then
+        output+="\n❌ Not a valid Git repository"
+        echo -e "$output"
+        return
+    fi
 
-    local default_branch=$(git remote show origin 2>/dev/null | awk '/HEAD branch/ {print $NF}')
-    local current_branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+    local default_branch=$(git -C "$repo_dir" remote show origin 2>/dev/null | awk '/HEAD branch/ {print $NF}')
+    local current_branch=$(git -C "$repo_dir" symbolic-ref --short HEAD 2>/dev/null)
 
     if [[ "$current_branch" != "$default_branch" ]]; then
     output+="\n🔁 Switching to $default_branch from $current_branch"
-        git switch "$default_branch" 2>/dev/null || git checkout "$default_branch"
+        git -C "$repo_dir" switch "$default_branch" 2>/dev/null || git -C "$repo_dir" checkout "$default_branch"
     fi
 
     output+="\n⬇️ Pulling latest changes from origin/$default_branch"
-    local pull_output=$(git pull 2>&1)
+    local pull_output=$(git -C "$repo_dir" pull 2>&1)
     output+="\n$pull_output"
 
     # Output everything at once
