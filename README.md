@@ -122,6 +122,18 @@ MIT © [Evren Tan](https://github.com/evrentan)
 
 ---
 
-## 🤝 Contributing
+## 🙏 Credits
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change or improve.
+This project was developed and maintained by [Evren Tan](https://github.com/evrentan) with ❤️ and plenty of ☕️.
+
+Special thanks to:
+
+- The open source community for inspiration and feedback
+- [Homebrew](https://github.com/homebrew) maintainers for making CLI distribution simple 🍺
+- Everyone who contributed issues, ideas, and support
+
+---
+
+## 🙌 Contributors
+
+See the full list of contributors in [CONTRIBUTORS.md](CONTRIBUTORS.md).
