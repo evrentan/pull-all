@@ -11,23 +11,23 @@ show_help() {
 pull-all 🌀
 
 Usage:
-  pull-all [directory]           Pull all Git repos in given directory or default
-  pull-all run [directory]       (Same as above)
-  pull-all -p|--parallel [dir]   Pull all repos in parallel
-  pull-all set-default <dir>     Set default directory persistently
-  pull-all get-default           Show current default directory
-  pull-all help                  Show this help message
+  pull-all [directory]               Pull all Git repos in given directory or default
+  pull-all run [directory]           (Same as above)
+  pull-all -p|--parallel [dir]       Pull all repos in parallel
+  pull-all -m|--merge-master         Merge master into current branch (if conflict-free)
+  pull-all set-default <dir>         Set default directory persistently
+  pull-all get-default               Show current default directory
+  pull-all help                      Show this help message
 
-Note: The -p or --parallel flag can be placed anywhere in the command
+Note: The -p / --parallel and -m / --merge-master flags can be placed anywhere
 
 Examples:
   pull-all
   pull-all ~/projects
   pull-all -p ~/projects
-  pull-all ~/projects -p
-  pull-all --parallel
-  pull-all run -p ~/projects
-  pull-all run ~/projects --parallel
+  pull-all ~/projects -pm
+  pull-all --parallel --merge-master
+  pull-all run ~/projects -m
   pull-all set-default ~/code
   pull-all get-default
 EOF
@@ -49,8 +49,8 @@ get_default() {
 
 pull_single_repo() {
     local repo_dir="$1"
+    local do_merge="$2"
 
-    # Buffer output for clean display
     local output=""
     output+="\n👉 Pulling in: $repo_dir"
 
@@ -64,7 +64,7 @@ pull_single_repo() {
     local current_branch=$(git -C "$repo_dir" symbolic-ref --short HEAD 2>/dev/null)
 
     if [[ "$current_branch" != "$default_branch" ]]; then
-    output+="\n🔁 Switching to $default_branch from $current_branch"
+        output+="\n🔁 Switching to $default_branch from $current_branch"
         git -C "$repo_dir" switch "$default_branch" 2>/dev/null || git -C "$repo_dir" checkout "$default_branch"
     fi
 
@@ -72,13 +72,31 @@ pull_single_repo() {
     local pull_output=$(git -C "$repo_dir" pull 2>&1)
     output+="\n$pull_output"
 
-    # Output everything at once
+    if [[ "$do_merge" == "true" ]]; then
+        # Aktif olmayan branch'e geri geç ve merge et
+        if [[ "$current_branch" != "$default_branch" ]]; then
+            git -C "$repo_dir" switch "$current_branch" 2>/dev/null || git -C "$repo_dir" checkout "$current_branch"
+            output+="\n🔀 Trying to merge origin/$default_branch into $current_branch..."
+
+            git -C "$repo_dir" fetch origin "$default_branch" &>/dev/null
+            git -C "$repo_dir" merge "origin/$default_branch" --no-edit &>/dev/null
+
+            if [[ $? -eq 0 ]]; then
+                output+="\n✅ Merge successful"
+            else
+                output+="\n⚠️ Conflict detected, aborting merge"
+                git -C "$repo_dir" merge --abort &>/dev/null
+            fi
+        fi
+    fi
+
     echo -e "$output"
 }
 
 run_pull() {
     local base_dir="$1"
     local parallel="$2"
+    local do_merge="$3"
 
     if [[ -z "$base_dir" ]]; then
         base_dir="$DEFAULT_DIR"
@@ -88,39 +106,40 @@ run_pull() {
 
     if [[ "$parallel" == "true" ]]; then
         echo "⚡ Running in parallel mode"
-
-        # Use process substitution instead of pipeline to avoid subshell
         while read -r gitdir; do
             repo_dir="$(dirname "$gitdir")"
             (
-                pull_single_repo "$repo_dir"
+                pull_single_repo "$repo_dir" "$do_merge"
             ) &
         done < <(find "$base_dir" -type d -name ".git")
-
         wait
         echo "✅ All parallel operations completed"
     else
         find "$base_dir" -type d -name ".git" | while read -r gitdir; do
             repo_dir="$(dirname "$gitdir")"
-            (
-                pull_single_repo "$repo_dir"
-            )
+            pull_single_repo "$repo_dir" "$do_merge"
         done
     fi
 }
 
 # Argument parsing
-
 COMMAND=""
 PARALLEL=false
+MERGE_MASTER=false
 NEW_ARGS=()
 
 for arg in "$@"; do
-    if [[ "$arg" == "-p" || "$arg" == "--parallel" ]]; then
-        PARALLEL=true
-    else
-        NEW_ARGS+=("$arg")
-    fi
+    case "$arg" in
+        -p|--parallel)
+            PARALLEL=true
+            ;;
+        -m|--merge-master)
+            MERGE_MASTER=true
+            ;;
+        *)
+            NEW_ARGS+=("$arg")
+            ;;
+    esac
 done
 
 set -- "${NEW_ARGS[@]}"
@@ -129,7 +148,7 @@ shift || true
 
 if [[ "$COMMAND" != "run" && "$COMMAND" != "set-default" && "$COMMAND" != "get-default" && "$COMMAND" != "help" && "$COMMAND" != "-h" && "$COMMAND" != "--help" ]]; then
     if [[ -d "$COMMAND" || "$COMMAND" =~ ^[.~\/] ]]; then
-        run_pull "$COMMAND" "$PARALLEL"
+        run_pull "$COMMAND" "$PARALLEL" "$MERGE_MASTER"
         exit 0
     fi
 fi
@@ -145,7 +164,7 @@ case "$COMMAND" in
         get_default
         ;;
     run|"")
-    run_pull "$1" "$PARALLEL"
+        run_pull "$1" "$PARALLEL" "$MERGE_MASTER"
         ;;
     *)
         echo "❌ Unknown command or invalid directory: $COMMAND"
