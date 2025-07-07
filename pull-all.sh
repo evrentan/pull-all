@@ -14,19 +14,21 @@ Usage:
   pull-all [directory]               Pull all Git repos in given directory or default
   pull-all run [directory]           (Same as above)
   pull-all -p|--parallel [dir]       Pull all repos in parallel
-  pull-all -m|--merge-master         Merge master into current branch (if conflict-free)
+  pull-all -m|--merge-default-branch Merge master into current branch (if conflict-free)
   pull-all set-default <dir>         Set default directory persistently
   pull-all get-default               Show current default directory
   pull-all help                      Show this help message
 
-Note: The -p / --parallel and -m / --merge-master flags can be placed anywhere
+Note: The -p / --parallel and -m / --merge-default-branch flags can be placed anywhere
 
 Examples:
   pull-all
   pull-all ~/projects
   pull-all -p ~/projects
+  pull-all --parallel
+  pull-all --merge-default-branch
   pull-all ~/projects -pm
-  pull-all --parallel --merge-master
+  pull-all --parallel --merge-default-branch
   pull-all run ~/projects -m
   pull-all set-default ~/code
   pull-all get-default
@@ -73,7 +75,7 @@ pull_single_repo() {
     output+="\n$pull_output"
 
     if [[ "$do_merge" == "true" ]]; then
-        # Aktif olmayan branch'e geri geç ve merge et
+        # Switch back to default branch and merge
         if [[ "$current_branch" != "$default_branch" ]]; then
             git -C "$repo_dir" switch "$current_branch" 2>/dev/null || git -C "$repo_dir" checkout "$current_branch"
             output+="\n🔀 Trying to merge origin/$default_branch into $current_branch..."
@@ -82,9 +84,9 @@ pull_single_repo() {
             git -C "$repo_dir" merge "origin/$default_branch" --no-edit &>/dev/null
 
             if [[ $? -eq 0 ]]; then
-                output+="\n✅ Merge successful"
+                output+="\n✅ Merging $default_branch into $current_branch is successful"
             else
-                output+="\n⚠️ Conflict detected, aborting merge"
+                output+="\n⚠️ Conflict detected between $default_branch & $current_branch, aborting merge"
                 git -C "$repo_dir" merge --abort &>/dev/null
             fi
         fi
@@ -125,7 +127,7 @@ run_pull() {
 # Argument parsing
 COMMAND=""
 PARALLEL=false
-MERGE_MASTER=false
+MERGE_DEFAULT_BRANCH=false
 NEW_ARGS=()
 
 for arg in "$@"; do
@@ -134,7 +136,7 @@ for arg in "$@"; do
             PARALLEL=true
             ;;
         -m|--merge-master)
-            MERGE_MASTER=true
+            MERGE_DEFAULT_BRANCH=true
             ;;
         *)
             NEW_ARGS+=("$arg")
@@ -148,7 +150,7 @@ shift || true
 
 if [[ "$COMMAND" != "run" && "$COMMAND" != "set-default" && "$COMMAND" != "get-default" && "$COMMAND" != "help" && "$COMMAND" != "-h" && "$COMMAND" != "--help" ]]; then
     if [[ -d "$COMMAND" || "$COMMAND" =~ ^[.~\/] ]]; then
-        run_pull "$COMMAND" "$PARALLEL" "$MERGE_MASTER"
+        run_pull "$COMMAND" "$PARALLEL" "$MERGE_DEFAULT_BRANCH"
         exit 0
     fi
 fi
@@ -164,7 +166,7 @@ case "$COMMAND" in
         get_default
         ;;
     run|"")
-        run_pull "$1" "$PARALLEL" "$MERGE_MASTER"
+        run_pull "$1" "$PARALLEL" "$MERGE_DEFAULT_BRANCH"
         ;;
     *)
         echo "❌ Unknown command or invalid directory: $COMMAND"
