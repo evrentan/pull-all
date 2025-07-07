@@ -75,7 +75,7 @@ pull_single_repo() {
     output+="\n$pull_output"
 
     if [[ "$do_merge" == "true" ]]; then
-        # Switch back to default branch and merge
+        # Switch back to current branch and merge default branch into it
         if [[ "$current_branch" != "$default_branch" ]]; then
             git -C "$repo_dir" switch "$current_branch" 2>/dev/null || git -C "$repo_dir" checkout "$current_branch"
             output+="\n🔀 Trying to merge origin/$default_branch into $current_branch..."
