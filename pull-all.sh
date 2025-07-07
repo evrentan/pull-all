@@ -14,7 +14,7 @@ Usage:
   pull-all [directory]               Pull all Git repos in given directory or default
   pull-all run [directory]           (Same as above)
   pull-all -p|--parallel [dir]       Pull all repos in parallel
-  pull-all -m|--merge-default-branch Merge master into current branch (if conflict-free)
+  pull-all -m|--merge-default-branch Merge default branch into current branch (if conflict-free)
   pull-all set-default <dir>         Set default directory persistently
   pull-all get-default               Show current default directory
   pull-all help                      Show this help message
